@@ -4,80 +4,82 @@ import runChat from "../config/gemini";
 export const Context = createContext();
 
 const ContextProvider = (props) => {
+  const [conversations, setConversations] = useState([]);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-    const [prevPrompts, setPrevPrompts] = useState([]);
-    const [input, setInput] = useState("");
-    const [recentPrompt, setRecentPrompt] = useState("");
-    const [showResult, setShowResult] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [resultData, setResultData] = useState("")
+  const onSent = async (prompt) => {
+    setLoading(true);
 
-
-    function delayPara(index, nextWord) {
-        setTimeout(function () {
-            setResultData(prev => prev + nextWord)
-        }, 75 * index);
+    let history = [];
+    if (currentConversationId !== null) {
+      const currentConversation = conversations.find(conv => conv.id === currentConversationId);
+      if (currentConversation) {
+        history = currentConversation.messages;
+      }
     }
 
-    const onSent = async (prompt) => {
-
-        setResultData("")
-        setLoading(true)
-        setShowResult(true)
-        let response;
-        if (prompt !== undefined) {
-            response = await runChat(prompt);
-            setRecentPrompt(prompt)
-        }
-        else {
-            setPrevPrompts(prev => [...prev, input]);
-            setRecentPrompt(input)
-            response = await runChat(input);
-        }
-        let responseArray = response.split('**');
-        let newArray = "";
-        for (let i = 0; i < responseArray.length; i++) {
-            if (i === 0 || i % 2 !== 1) {
-                newArray += responseArray[i]
-            }
-            else {
-                newArray += "<b>" + responseArray[i] + "</b>"
-            }
-        }
-        console.log(newArray);
-        responseArray = newArray.split('*').join("</br>").split(" ");
-        for (let i = 0; i < responseArray.length; i++) {
-            const nextWord = responseArray[i];
-            delayPara(i, nextWord + " ")
-        }
-        setLoading(false);
-        setInput("")
+    let response;
+    if (prompt) {
+      response = await runChat(prompt, history);
+    } else {
+      response = await runChat(input, history);
     }
 
-    const newChat = async () => {
-        setLoading(false);
-        setShowResult(false);
-    }
+    const newMessage = {
+      role: "user",
+      content: input,
+    };
+    const newResponse = {
+      role: "assistant",
+      content: response,
+    };
 
-    const contextValue = {
-        prevPrompts,
-        setPrevPrompts,
-        onSent,
-        setRecentPrompt,
-        recentPrompt,
-        showResult,
-        loading,
-        resultData,
-        input,
-        setInput,
-        newChat
-    }
+    setConversations((prev) => {
+      if (currentConversationId === null) {
+        const newConversation = {
+          id: prev.length + 1,
+          messages: [newMessage, newResponse],
+        };
+        setCurrentConversationId(newConversation.id);
+        return [...prev, newConversation];
+      } else {
+        return prev.map((conv) =>
+          conv.id === currentConversationId
+            ? {
+                ...conv,
+                messages: [...conv.messages, newMessage, newResponse],
+              }
+            : conv
+        );
+      }
+    });
 
-    return (
-        <Context.Provider value={contextValue}>
-            {props.children}
-        </Context.Provider>
-    )
-}
+    setLoading(false);
+    setInput("");
+  };
 
-export default ContextProvider
+  const newChat = () => {
+    setCurrentConversationId(conversations.length + 1);
+  };
+
+  const contextValue = {
+    conversations,
+    currentConversationId,
+    setCurrentConversationId,
+    onSent,
+    input,
+    setInput,
+    loading,
+    newChat,
+  };
+
+  return (
+    <Context.Provider value={contextValue}>
+      {props.children}
+    </Context.Provider>
+  );
+};
+
+export default ContextProvider;

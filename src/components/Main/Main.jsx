@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import "./Main.css";
 import { assets } from "../../assets/assets";
 import { Context } from "../../context/Context";
@@ -6,10 +6,9 @@ import { Context } from "../../context/Context";
 const Main = () => {
   const {
     onSent,
-    recentPrompt,
-    showResult,
+    conversations,
+    currentConversationId,
     loading,
-    resultData,
     setInput,
     input,
   } = useContext(Context);
@@ -27,6 +26,8 @@ const Main = () => {
     recognition.start();
   };
 
+  const currentConversation = conversations.find(conv => conv.id === currentConversationId);
+
   return (
     <div className="main">
       <div className="nav">
@@ -34,24 +35,21 @@ const Main = () => {
         <img src={assets.user_icon} alt="" />
       </div>
       <div className="main-container">
-        {showResult ? (
+        {currentConversation ? (
           <div className="result">
-            <div className="result-title">
-              <img src={assets.user_icon} alt="" />
-              <p>{recentPrompt}</p>
-            </div>
-            <div className="result-data">
-              <img src={assets.gemini_icon} alt="" />
-              {loading ? (
-                <div className="loader">
-                  <hr className="animated-bg" />
-                  <hr className="animated-bg" />
-                  <hr className="animated-bg" />
-                </div>
-              ) : (
-                <p dangerouslySetInnerHTML={{ __html: resultData }}></p>
-              )}
-            </div>
+            {currentConversation.messages.map((message, index) => (
+              <div key={index} className="result-title">
+                <img src={message.role === "user" ? assets.user_icon : assets.gemini_icon} alt="" />
+                <p>{message.content}</p>
+              </div>
+            ))}
+            {loading && (
+              <div className="loader">
+                <hr className="animated-bg" />
+                <hr className="animated-bg" />
+                <hr className="animated-bg" />
+              </div>
+            )}
           </div>
         ) : (
           <>
