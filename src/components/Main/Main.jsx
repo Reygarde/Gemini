@@ -27,6 +27,12 @@ const Main = () => {
     recognition.start();
   };
 
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      onSent();
+    }
+  };
+
   const currentConversation = conversations.find(conv => conv.id === currentConversationId);
 
   return (
@@ -81,7 +87,13 @@ const Main = () => {
 
         <div className="main-bottom">
           <div className="search-box">
-            <input onChange={(e) => setInput(e.target.value)} value={input} type="text" placeholder="Enter a prompt here" />
+            <input 
+              onChange={(e) => setInput(e.target.value)} 
+              value={input} 
+              type="text" 
+              placeholder="Enter a prompt here" 
+              onKeyDown={handleKeyPress} // Ajout du gestionnaire d'événements
+            />
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <img
