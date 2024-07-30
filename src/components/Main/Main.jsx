@@ -11,6 +11,7 @@ const Main = () => {
     loading,
     setInput,
     input,
+    newChat
   } = useContext(Context);
 
   const handleSpeechRecognition = (language) => {

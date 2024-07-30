@@ -11,6 +11,9 @@ const ContextProvider = (props) => {
 
   const onSent = async (prompt) => {
     setLoading(true);
+    
+    // Vérifier si un prompt est donné ou utiliser l'input actuel
+    const userMessage = prompt || input;
 
     let history = [];
     if (currentConversationId !== null) {
@@ -20,22 +23,27 @@ const ContextProvider = (props) => {
       }
     }
 
-    let response;
-    if (prompt) {
-      response = await runChat(prompt, history);
-    } else {
-      response = await runChat(input, history);
-    }
-
+    // Ajout du message utilisateur dans l'historique
     const newMessage = {
       role: "user",
-      content: input,
+      content: userMessage,
     };
+
+    let response;
+    try {
+      response = await runChat(userMessage, history);
+    } catch (error) {
+      console.error("Error in runChat:", error);
+      response = "Sorry, something went wrong.";
+    }
+
+    // Ajout de la réponse de l'assistant
     const newResponse = {
       role: "assistant",
       content: response,
     };
 
+    // Mise à jour des conversations
     setConversations((prev) => {
       if (currentConversationId === null) {
         const newConversation = {
@@ -61,7 +69,10 @@ const ContextProvider = (props) => {
   };
 
   const newChat = () => {
-    setCurrentConversationId(conversations.length + 1);
+    // Générer un nouvel ID et ajouter une nouvelle conversation
+    const newId = conversations.length + 1;
+    setConversations([...conversations, { id: newId, messages: [] }]);
+    setCurrentConversationId(newId);
   };
 
   const contextValue = {
